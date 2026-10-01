@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Loom</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#07090b;--panel:#0d1114cc;--line:#1c252b;--tx:#d6e2dc;--dim:#6b7c76;--ac:#39ff88;--ac2:#22d3ee;--dg:#ff4d5e;--grid:255,255,255;--mono:"JetBrains Mono","Fira Code",ui-monospace,monospace}
+[data-theme=dracula]{--bg:#1e1f29;--panel:#282a36cc;--line:#3a3d52;--tx:#f8f8f2;--dim:#7b7f9e;--ac:#bd93f9;--ac2:#ff79c6;--dg:#ff5555}
+[data-theme=tokyo]{--bg:#12131c;--panel:#1a1b2ecc;--line:#2a2e48;--tx:#c0caf5;--dim:#6b739b;--ac:#7dcfff;--ac2:#bb9af7;--dg:#f7768e}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--tx);font:14px Inter,system-ui,sans-serif;overflow:hidden;transition:background .2s}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(var(--grid),.035) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--grid),.035) 1px,transparent 1px),linear-gradient(rgba(var(--grid),.04) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--grid),.04) 1px,transparent 1px);background-size:20px 20px,20px 20px,100px 100px,100px 100px;-webkit-mask-image:radial-gradient(ellipse at center,transparent 25%,#000 95%);mask-image:radial-gradient(ellipse at center,transparent 25%,#000 95%)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 160px #000a}
+header{position:relative;z-index:1;display:flex;align-items:center;gap:24px;padding:12px 20px;flex-wrap:wrap}
+#banner{margin:0;font:12px/1 var(--mono);background:linear-gradient(90deg,var(--ac),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--ac) 50%,transparent))}
+.cur{display:inline-block;width:.6em;height:1em;background:var(--ac);margin-left:6px;vertical-align:bottom;animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:0}}
+.hr{display:flex;gap:10px;align-items:center;flex:1;min-width:300px}
+.hr form{flex:1;display:flex;gap:8px}
+.tag{color:var(--dim);font:12px var(--mono);white-space:nowrap}
+input,textarea,select{font:13px var(--mono);color:var(--tx);background:#0006;border:1px solid var(--line);border-radius:10px;padding:8px 10px;outline:0;width:100%}
+input:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 18%,transparent)}
+select{width:auto}
+main{position:relative;z-index:1;flex:1;min-height:0;display:grid;grid-template-columns:250px 1fr 380px;gap:12px;padding:0 20px 12px}
+.panel{background:var(--panel);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:12px;overflow:auto;display:flex;flex-direction:column;gap:6px;min-height:0}
+h3{margin:8px 0 2px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c,var(--ac));margin-right:8px;box-shadow:0 0 8px var(--c,var(--ac))}
+.it{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;cursor:pointer;font:13px var(--mono)}
+.it:hover{background:#ffffff0a}.it.on{color:var(--ac)}
+.fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd{font:11px var(--mono);width:18px;text-align:center;border-radius:5px;padding:1px 0;background:#ffffff12}
+.bM{color:#f5c542}.bA,.bU{color:var(--ac)}.bD{color:var(--dg)}.bR{color:var(--ac2)}
+.mini{background:none;border:1px solid var(--line);color:var(--tx);border-radius:6px;cursor:pointer;width:22px}
+.dim{color:var(--dim);font-size:12px;padding:4px 8px}
+.row{display:flex;gap:6px}
+.tabs{display:flex;gap:6px}
+.tabs button{background:none;border:0;color:var(--dim);font:inherit;padding:4px 10px;border-radius:8px;cursor:pointer}
+.tabs .on{color:var(--tx);background:#ffffff10}
+#view{margin:0;flex:1;overflow:auto;font:12.5px/1.5 var(--mono);white-space:pre}
+#view .a{color:var(--ac)}#view .d{color:var(--dg)}#view .h{color:var(--ac2)}
+.btn{font:inherit;font-size:13px;color:var(--tx);background:linear-gradient(#ffffff0d,#ffffff03);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;box-shadow:inset 0 1px #ffffff1a,0 2px 6px #0006,0 8px 20px #0004;transition:.15s}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:translateY(1px);box-shadow:inset 0 2px 6px #0009}
+.pri{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#041;border:0;font-weight:600;box-shadow:inset 0 1px #fff6,0 0 18px color-mix(in srgb,var(--ac) 45%,transparent)}
+.ghost{background:none;box-shadow:none;padding:3px 10px;font-size:12px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+#feed{flex:1 1 0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;min-height:120px;padding-right:2px}
+#feed>.card{flex-shrink:0}
+.fh{display:flex;align-items:center}.fh span{flex:1}
+.card{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#0004;animation:in .2s}
+.card.ok{border-left:3px solid var(--ac)}.card.bad{border-left:3px solid var(--dg);animation:shake .3s}.card.run{animation:pl 1s infinite}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}@keyframes pl{50%{opacity:.5}}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.ch{display:flex;gap:8px;align-items:center;font:12px var(--mono)}.ch code{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch b{color:var(--ac)}.bad .ch b{color:var(--dg)}.ch small{color:var(--dim)}
+.card pre{margin:6px 0;font:12px/1.4 var(--mono);white-space:pre-wrap;color:var(--dim);max-height:160px;overflow:auto}
+.ca{display:flex;gap:6px}
+footer{position:relative;z-index:1;display:flex;font:12px var(--mono);border-top:1px solid var(--line);background:#0008}
+footer span{padding:5px 14px;border-right:1px solid var(--line)}footer .sp{flex:1}
+footer .b{color:var(--ac)}footer .s{color:var(--ac2)}
+.tag{white-space:normal;max-width:300px;line-height:1.4}.tag b{color:var(--tx);font:600 13px Inter,system-ui,sans-serif}
+.tr{white-space:normal;font:13px/1.7 var(--mono)}.tr details{margin-left:16px;border-left:1px solid var(--line);padding-left:8px}.tr summary{cursor:pointer;color:var(--ac2)}.tr .tf{margin-left:18px}.tr .tf[data-p]{cursor:pointer;border-radius:6px;padding:0 6px}.tr .tf[data-p]:hover{background:#ffffff0d;color:var(--ac)}.tr small{color:var(--dim);margin-left:10px;font-size:11px}
+#fv{position:fixed;inset:0;z-index:10;background:#000b;display:flex;align-items:center;justify-content:center}#fv[hidden]{display:none}
+.fvb{width:min(1000px,94vw);height:min(86vh,900px);display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px #000a}
+.fvh{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:#0004}.fvh b{font:600 13px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fvh small{color:var(--dim);font:12px var(--mono);white-space:nowrap}.fvh .sp{flex:1}
+#fvbody{flex:1;overflow:auto;display:flex;font:12.5px/1.55 var(--mono);min-height:0}
+#fvbody .gut{position:sticky;left:0;margin:0;padding:10px 10px 10px 12px;text-align:right;color:var(--dim);background:var(--bg);border-right:1px solid var(--line);user-select:none;flex:none}
+#fvbody .code{margin:0;padding:10px 14px;white-space:pre;tab-size:4;flex:1;min-width:max-content;user-select:text}
+#fvbody .msg{margin:auto;color:var(--dim);text-align:center;padding:24px}
+#fvbody .img{margin:auto;padding:16px;max-width:100%;text-align:center}#fvbody .img img{max-width:100%;max-height:calc(86vh - 90px);background:repeating-conic-gradient(#8884 0 25%,transparent 0 50%) 0 0/16px 16px;border-radius:6px}
+.code .k{color:var(--ac2)}.code .s{color:var(--ac)}.code .c{color:var(--dim);font-style:italic}.code .n{color:#f5c542}
+#help{position:fixed;inset:0;z-index:9;background:#000a;display:flex;align-items:center;justify-content:center}#help[hidden]{display:none}
+.hb{width:min(720px,92vw);max-height:86vh;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:20px 24px;line-height:1.6}
+.hb h2{margin:0;flex:1}.hb h4{margin:18px 0 4px;color:var(--ac)}.hb p,.hb ol{margin:4px 0}.hb code,.hb pre{font:12.5px var(--mono);background:#0005;border-radius:6px;padding:1px 6px}.hb pre{padding:10px;overflow:auto}
+[data-mode=light]{--bg:#f3f5fb;--panel:#ffffffd9;--line:#d8deec;--tx:#1d2433;--dim:#667085;--ac:#4f46e5;--ac2:#0284c7;--dg:#e11d48;--grid:30,40,110}
+[data-mode=light] body::after{box-shadow:inset 0 0 140px #4f46e514}
+[data-mode=light] input,[data-mode=light] textarea,[data-mode=light] select,[data-mode=light] .card,[data-mode=light] footer{background:#fff}
+[data-mode=light] .it:hover,[data-mode=light] .bd,[data-mode=light] .tabs .on{background:#1d243312}
+[data-mode=light] #theme{display:none}
+[data-mode=light] #view .a,[data-mode=light] .bA,[data-mode=light] .bU{color:#16a34a}[data-mode=light] .bM{color:#b45309}
+[data-mode=light] .btn{--k:#6366f1;background:var(--k);color:#fff;border:0;box-shadow:0 3px 0 color-mix(in srgb,var(--k) 65%,#000),0 8px 16px color-mix(in srgb,var(--k) 30%,transparent)}
+[data-mode=light] .btn:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--k) 65%,#000)}
+[data-mode=light] [data-a=init]{--k:#64748b}[data-mode=light] [data-a=add_all]{--k:#0ea5e9}[data-mode=light] [data-a=commit]{--k:#16a34a}[data-mode=light] [data-a=fetch]{--k:#0891b2}[data-mode=light] [data-a=pull]{--k:#9333ea}[data-mode=light] [data-a=push]{--k:#ea580c}[data-mode=light] [data-a=stash]{--k:#d97706}[data-mode=light] [data-a=stash_pop]{--k:#db2777}
+[data-mode=light] .btn.ghost{background:none;color:var(--tx);border:1px solid var(--line);box-shadow:none}
+[data-mode=light] .hb code,[data-mode=light] .hb pre{background:#1d243310}
+@media(max-width:1000px){main{grid-template-columns:1fr;overflow:auto}body{overflow:auto}}
+
+@property --ac{syntax:'<color>';inherits:true;initial-value:#39ff88}
+:root{--dy:0px;transition:--ac 1.4s}
+[data-state=clean]{--ac:var(--ac2)}[data-state=dirty]{--ac:#ffb454}[data-state=conflict]{--ac:var(--dg)}
+@keyframes drift{to{background-position:0 var(--dy),0 var(--dy),0 var(--dy),0 var(--dy)}}
+body::before{animation:drift 30s linear infinite}
+@keyframes vig{40%{box-shadow:inset 0 0 220px 40px color-mix(in srgb,var(--dg) 55%,transparent)}}
+body.pulse::after{animation:vig .9s}
+#bowd{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:8}
+body.bow #bowd{animation:bow 2s ease-in-out}@keyframes bow{50%{opacity:.4}}
+.card{position:relative;overflow:hidden}
+.gl{font-style:normal;color:var(--dim);width:1.2em;text-align:center}
+.card.bad{animation:shake .3s,scar 90s forwards}@keyframes scar{from{box-shadow:inset 0 0 22px #ff4d5e66}to{box-shadow:none}}
+.card.run::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--ac);animation:thr 20s cubic-bezier(.1,.6,.3,1) forwards}@keyframes thr{to{width:100%}}
+.card.old{animation:slid .5s forwards}@keyframes slid{to{transform:translateY(10px);opacity:.35}}
+.card.pin{border-top:2px solid var(--ac2)}
+.it.slide{animation:in .4s}.it.pulse{animation:fp 1.4s}@keyframes fp{30%{background:color-mix(in srgb,var(--ac) 22%,transparent)}}
+.it.gh{opacity:0;animation:gh 1s;pointer-events:none;outline:1px dashed var(--dim)}@keyframes gh{from{opacity:.6}}
+footer{transition:background 1s}footer.sync{background:color-mix(in srgb,#39ff88 9%,#0008)}
+#ah.step{animation:stp .5s}@keyframes stp{50%{transform:translateY(-4px)}}
+.gs text{font:12px var(--mono);fill:var(--tx)}.gs .ed{fill:none;stroke-width:2;stroke-dasharray:1;stroke-dashoffset:1;animation:dr .8s forwards}@keyframes dr{to{stroke-dashoffset:0}}
+.nd{animation:pp .4s backwards;transform-box:fill-box;transform-origin:center}@keyframes pp{from{transform:scale(0)}}
+.nd .ring{fill:none;animation:rg .8s backwards}@keyframes rg{from{r:5;opacity:1}to{r:16;opacity:0}}
+#whisper{position:fixed;left:0;top:0;z-index:12;pointer-events:none;opacity:0;transition:opacity .2s;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font:12px var(--mono);max-width:360px}
+.rl{padding:3px 6px;border-radius:6px}.rl small{margin-left:10px}.rl{cursor:pointer}.rl:hover{background:#ffffff0a}
+.rl.found{animation:fd 2.4s forwards;box-shadow:0 0 0 1px var(--ac)}@keyframes fd{from{background:color-mix(in srgb,var(--ac) 40%,transparent)}}
+#pal{position:fixed;inset:0;z-index:15;background:#0008;display:flex;justify-content:center;padding-top:14vh}#pal[hidden]{display:none}
+.pb{width:min(520px,92vw);height:fit-content;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px;animation:shut .35s ease-out}
+@keyframes shut{from{clip-path:inset(0 50% 0 50%)}to{clip-path:inset(0)}}
+#pl div{display:flex;padding:6px 8px;border-radius:8px;font:13px var(--mono)}#pl div span{flex:1}#pl div small{color:var(--dim)}#pl .on{background:#ffffff12;color:var(--ac)}
+#weave{position:fixed;inset:0;z-index:20;pointer-events:none;background:color-mix(in srgb,var(--bg) 85%,transparent);animation:wf 3.6s forwards}@keyframes wf{80%{opacity:1}to{opacity:0}}
+#weave svg{width:100%;height:100%}#weave line{stroke:var(--ac);stroke-width:2;vector-effect:non-scaling-stroke;stroke-dasharray:1;stroke-dashoffset:1;animation:dr .9s forwards}#weave .wv{stroke:var(--ac2)}
+#shuttle{display:none;position:fixed;z-index:3;width:46px;height:10px;border-radius:5px;background:var(--ac);box-shadow:-140px 0 40px -8px var(--ac)}
+.zen header,.zen main,.zen footer{opacity:0;pointer-events:none}header,main,footer{transition:opacity .6s}
+.zen #shuttle{display:block;animation:ride 9s ease-in-out infinite alternate}@keyframes ride{from{left:12vw;top:30%}to{left:calc(94vw - 46px);top:70%}}
+@media(prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style></head>
+<body>
+<header>
+<pre id="banner">██╗      ██████╗  ██████╗ ███╗   ███╗
+██║     ██╔═══██╗██╔═══██╗████╗ ████║
+██║     ██║   ██║██║   ██║██╔████╔██║
+██║     ██║   ██║██║   ██║██║╚██╔╝██║
+███████╗╚██████╔╝╚██████╔╝██║ ╚═╝ ██║
+╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝<i class="cur"></i></pre>
+<div class="hr"><span class="tag"><b>Git &amp; GitHub, made easy.</b><br>Stage, commit, branch and push from one screen, and map any repo as a tree.</span>
+<form id="open"><input id="path" placeholder="/path/to/repo  or  https://github.com/owner/repo"><button class="btn pri">Open</button></form>
+<select id="theme"><option value="noir">Loom Noir</option><option value="dracula">Dracula</option><option value="tokyo">Tokyo Night</option></select>
+<button class="btn ghost" id="mode" title="Light / dark">☀</button><button class="btn" id="helpb" style="--k:#6366f1">? Help</button></div>
+</header>
+<main>
+<aside class="panel">
+<h3><i class="dot"></i>Branches</h3><div id="branches"></div>
+<form class="row" id="nbf"><input id="nb" placeholder="new-branch"><button class="btn">+</button></form>
+<h3><i class="dot" style="--c:var(--ac2)"></i>Files</h3><div id="files"></div>
+</aside>
+<section class="panel">
+<div class="tabs"><button data-t="diff" class="on">Diff</button><button data-t="graph">Graph</button><button data-t="tree">Tree</button><button data-t="reflog">Reflog</button><button class="btn ghost" id="cpt" style="margin-left:auto">Copy tree</button></div>
+<pre id="view">Paste a folder path above to open a local repo, or a GitHub link
+(or drag one onto this page) to see it as a tree.
+
+Press ? for help.</pre>
+</section>
+<aside class="panel">
+<h3><i class="dot" style="--c:#bd93f9"></i>Agent</h3>
+<textarea id="msg" rows="3" placeholder="Commit message"></textarea>
+<div class="btns">
+<button class="btn" data-a="init">Init</button><button class="btn" data-a="add_all">Add all</button>
+<button class="btn pri" data-a="commit">Commit</button><button class="btn" data-a="fetch">Fetch</button>
+<button class="btn" data-a="pull">Pull</button><button class="btn pri" data-a="push">Push</button>
+<button class="btn" data-a="stash">Stash</button><button class="btn" data-a="stash_pop">Pop</button>
+</div>
+<h3><i class="dot" style="--c:var(--ac2)"></i>Remote · HTTPS</h3>
+<form class="row" id="rmf"><input id="rurl" placeholder="https://github.com/you/repo.git"><button class="btn" style="--k:#0d9488">Set</button></form>
+<div class="row"><input id="tok" type="password" placeholder="GitHub token (never saved)" autocomplete="off"><button class="btn pri" id="pt" style="--k:#ea580c">Push</button></div>
+<h3 class="fh"><span><i class="dot" style="--c:#f5c542"></i>Command feed</span><button class="btn ghost" id="fclr" title="Remove all unpinned cards">Clear</button></h3>
+<div id="feed"></div>
+<form id="cmdf"><input id="cmd" placeholder="git log --oneline -10"></form>
+</aside>
+</main>
+<footer id="bar"></footer>
+<div id="fv" hidden><div class="fvb"><div class="fvh"><b id="fvn"></b><small id="fvm"></small><span class="sp"></span><button class="btn ghost" id="fvc">Copy</button><button class="btn ghost" id="fvx">Close ✕</button></div><div id="fvbody"></div></div></div>
+<div id="help" hidden><div class="hb">
+<div class="row"><h2>Loom help</h2><button class="btn ghost" id="hx">Close ✕</button></div>
+<p>Loom is a private dashboard for Git and GitHub. It runs only on your machine (127.0.0.1) and shows every git command it runs.</p>
+<h4>Quick start</h4>
+<ol><li>Paste your repo folder in the top box and click <b>Open</b>.</li><li>Click <code>+</code> beside a file (or <b>Add all</b>) to stage it.</li><li>Write a message and click <b>Commit</b>.</li><li>Click <b>Push</b>.</li></ol>
+<h4>See a repo as a tree</h4>
+<p>Opening a local folder shows its files in the <b>Tree</b> tab. To map a GitHub repo, paste its link in the top box or drag the link onto the page. For private repos or rate-limit errors, put a token in the token box first. <b>Copy tree</b> copies a text version.</p>
+<h4>Push over HTTPS</h4>
+<ol><li>On GitHub: Settings → Developer settings → Personal access tokens. Create a fine-grained token with <i>Contents: Read and write</i> for your repo.</li><li>Paste <code>https://github.com/you/repo.git</code> in the Remote box and click <b>Set</b>.</li><li>Paste the token in the token box and click the orange <b>Push</b>. The first push sets the upstream branch for you.</li></ol>
+<p>The token stays in this page's memory and is passed to git for that one push. It is not saved in <code>.git/config</code> (needs git 2.31+). To avoid pasting it, run <code>git config --global credential.helper store</code> in a terminal, push once there, then use the normal <b>Push</b> button.</p>
+<h4>Buttons</h4>
+<p><b>Fetch</b> checks the remote. <b>Pull</b> brings changes in. <b>Stash</b> shelves your edits and <b>Pop</b> brings them back. <b>Init</b> makes a new repo. Click a branch to switch, or type a name and <code>+</code> to create one. The bottom box runs any git command.</p>
+<h4>Terminal</h4>
+<pre>python loom.py help
+python loom.py /path/to/repo
+python loom.py --port 9000 --no-browser</pre>
+<p>Shortcuts: <code>Ctrl/Cmd+K</code> opens the command palette, which lists each action's key. <code>Esc</code> twice resets the view. <code>?</code> opens this page, <code>Esc</code> closes it. The ☀ button switches light and dark.</p>
+</div></div>
+<div id="pal" hidden><div class="pb"><input id="pq" placeholder="Type a command…" autocomplete="off"><div id="pl"></div></div></div><div id="bowd"></div><div id="whisper"></div><div id="shuttle"></div>
+<script>
+const $=s=>document.querySelector(s),qs=new URLSearchParams(location.search);
+const TOKEN=qs.get("token")||sessionStorage.loomToken||"";sessionStorage.loomToken=TOKEN;
+let path=qs.get("path")||localStorage.loomPath||"",st={},tab="diff",rmap=null,curTree=null;
+history.replaceState(null,"",location.pathname);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function theme(t){document.documentElement.dataset.theme=t;localStorage.loomTheme=t;$("#theme").value=t}
+theme(localStorage.loomTheme||"noir");$("#theme").onchange=e=>theme(e.target.value);
+$("#path").value=path;
+
+async function api(action,args={}){
+  const r=await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json","X-Loom-Token":TOKEN},body:JSON.stringify({path,action,args})});
+  if(!r.ok){const e=await r.json().catch(()=>({}));return{command:action,stdout:"",stderr:String(e.detail||e.error||"request failed"),exit_code:1,duration:0}}
+  return r.json();
+}
+async function act(action,args={}){
+  if(!path){view("Open a repo first.");return}
+  const d=document.createElement("div");d.className="card run";d.innerHTML='<div class="ch"><code>running…</code></div>';
+  $("#feed").prepend(d);keepPins();
+  const r=await api(action,args);
+  d.className="card "+(r.exit_code?"bad":"ok");
+  d.innerHTML='<div class="ch"><i class="gl">'+(GL[(r.command.split(" ")[1]||"")]||"⌘")+'</i><b>'+(r.exit_code?"✗":"✓")+'</b><code></code><small>'+r.duration+'s</small></div><pre></pre><div class="ca"><button class="btn ghost">Copy</button><button class="btn ghost">Re-run</button><button class="btn ghost">Pin</button><button class="btn ghost">Delete</button></div>';
+  d.querySelector("code").textContent="$ "+r.command;
+  typeInto(d.querySelector("pre"),(r.stdout+r.stderr).trim()||"(no output)");
+  const [cp,rr,pn,dl]=d.querySelectorAll(".ca button");dl.onclick=()=>d.remove();pn.onclick=()=>{d.classList.toggle("pin");pn.textContent=d.classList.contains("pin")?"Unpin":"Pin";keepPins()};
+  cp.onclick=()=>navigator.clipboard.writeText(r.command);
+  rr.onclick=()=>{d.classList.add("old");act(action,args)};
+  ambient(action,args,r);await refresh();
+}
+function view(t){$("#view").innerHTML=esc(t).split("\n").map(l=>'<span class="'+(l[0]=="+"?"a":l[0]=="-"?"d":l.startsWith("@@")?"h":"")+'">'+l+"</span>").join("\n")}
+
+function parse(t){
+  const L=t.split("\n").filter(Boolean),h=L.shift()||"";
+  const m=h.match(/^## (?:No commits yet on |Initial commit on )?(\S+?)(?:\.\.\.(\S+))?(?: \[(.+)\])?$/);
+  const n=(re)=>+((m&&m[3]||"").match(re)||[0,0])[1];
+  st={branch:m?m[1]:h.slice(3),up:m&&m[2],ahead:n(/ahead (\d+)/),behind:n(/behind (\d+)/),
+      files:L.map(l=>({x:l[0],y:l[1],name:l.slice(3)}))};
+}
+async function refresh(){
+  if(!path)return;
+  const s=await api("status");
+  if(s.exit_code){st={};render();if(!rmap)view((s.stderr.trim()||"Not a git repo")+"\n\nTip: hit Init to create one here.");return}
+  parse(s.stdout);
+  const [b,l,o]=await Promise.all([api("branches"),api("log"),api("origin")]);
+  if(!o.exit_code&&document.activeElement!=$("#rurl"))$("#rurl").value=o.stdout.trim();
+  st.branches=b.stdout.split("\n").filter(Boolean).map(x=>({cur:x[0]=="*",name:x.slice(2)}));
+  st.log=l.stdout;render();
+  if(tab=="graph"&&!rmap&&st.log!==lastLog)showGraph();lastLog=st.log;
+}
+function render(){
+  $("#branches").innerHTML=(st.branches||[]).map(b=>'<div class="it'+(b.cur?" on":"")+'" data-b="'+esc(b.name)+'">'+(b.cur?"●":"○")+" "+esc(b.name)+"</div>").join("")||'<div class="dim">—</div>';
+  $("#files").innerHTML=(st.files||[]).map((f,i)=>{
+    const staged=f.x!=" "&&f.x!="?",b=f.x=="?"?"U":(staged?f.x:f.y);
+    return '<div draggable="true" class="it'+fx(f)+'" data-i="'+i+'"><span class="bd b'+b+'">'+b+'</span><span class="fn">'+esc(f.name)+'</span><button class="mini" data-s="'+i+'">'+(staged?"−":"+")+"</button></div>"}).join("")||'<div class="dim">working tree clean</div>';
+  const c=(st.files||[]).length;
+  $("#bar").innerHTML=path?'<span>'+esc(path)+'</span><span class="b">⎇ '+esc(st.branch||"—")+'</span><span id="ah" title="Ahead of / behind upstream">↑'+(st.ahead||0)+' ↓'+(st.behind||0)+'</span><span class="s">~'+c+' changed</span><span class="sp"></span><span id="clk"></span>':"";
+  tick();fx2(c);
+}
+const tick=()=>{const e=$("#clk");if(e)e.textContent=new Date().toLocaleTimeString()};setInterval(tick,1000);
+
+$("#branches").onclick=e=>{const b=e.target.closest("[data-b]");if(b)act("switch",{branch:b.dataset.b})};
+$("#files").onclick=async e=>{
+  const s=e.target.closest("[data-s]"),it=e.target.closest("[data-i]");if(!it)return;
+  const f=st.files[+it.dataset.i],staged=f.x!=" "&&f.x!="?";
+  if(s){act(staged?"unstage":"add",{file:f.name});return}
+  tab="diff";document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t=="diff"));
+  if(f.x=="?"){view("Untracked file. Stage it (+) to include it in the next commit.");return}
+  const r=await api("diff",{file:f.name,staged});view(r.stdout||r.stderr||"(no diff)");
+};
+function setTab(t){tab=t;document.querySelectorAll(".tabs button[data-t]").forEach(x=>x.classList.toggle("on",x.dataset.t==t));
+  if(t=="graph")showGraph();else if(t=="reflog")showReflog();else if(t=="tree")showTree();else view("Pick a file on the left to see its diff.")}
+document.querySelectorAll(".tabs button[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+const srt=([a,x],[b,y])=>(!!x.f-!!y.f)||a.localeCompare(b);
+const fmt=b=>b>1e6?(b/1e6).toFixed(1)+" MB":b>1e3?(b/1e3).toFixed(1)+" KB":b?b+" B":"";
+function buildTree(files){const root={d:{},n:0,s:0};
+  for(const f of files){let n=root;const p=f.p.split("/");n.n++;n.s+=f.s||0;
+    p.forEach((seg,i)=>{if(i==p.length-1)n.d[seg]={f:1,s:f.s||0,p:f.p,h:f.h||""};else{n=n.d[seg]=n.d[seg]||{d:{},n:0,s:0};n.n++;n.s+=f.s||0}})}
+  return root}
+function nodeHtml(d,open){return Object.entries(d).sort(srt).map(([k,v])=>v.f?'<div class="tf" data-p="'+esc(v.p)+'" data-h="'+esc(v.h)+'" data-s="'+(v.s||0)+'">📄 '+esc(k)+'<small>'+fmt(v.s)+'</small></div>':'<details'+(open?' open':'')+'><summary>📁 '+esc(k)+'<small>'+v.n+' files'+(v.s?' · '+fmt(v.s):'')+'</small></summary>'+nodeHtml(v.d,false)+'</details>').join("")}
+function asText(d,pre=""){const e=Object.entries(d).sort(srt);return e.map(([k,v],i)=>{const last=i==e.length-1;return pre+(last?"└── ":"├── ")+k+(v.f?"":"/")+"\n"+(v.f?"":asText(v.d,pre+(last?"    ":"│   ")))}).join("")}
+async function showTree(){
+  let files,title;
+  if(rmap){files=rmap.files;title="github.com/"+rmap.repo+" @ "+rmap.branch+(rmap.truncated?" (truncated by GitHub)":"")+(rmap.description?" — "+rmap.description:"")}
+  else{if(!path){view("Open a repo first.");return}
+    const r=await api("ls");if(r.exit_code){view("Not a git repo yet. Hit Init, or paste a GitHub link above to map it.");return}
+    files=r.stdout.split("\0").filter(Boolean).map(p=>({p,s:0}));title=path}
+  curTree=buildTree(files);
+  $("#view").innerHTML='<div class="tr"><div class="dim">'+esc(title)+' · '+files.length+' files</div>'+nodeHtml(curTree.d,true)+"</div>"}
+async function loadRemote(u){
+  view("Mapping "+u+" …");
+  const r=await fetch("/api/remote",{method:"POST",headers:{"Content-Type":"application/json","X-Loom-Token":TOKEN},body:JSON.stringify({url:u,token:$("#tok").value})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){rmap=null;view("✗ "+(j.detail||j.error||"request failed"));return}
+  rmap=j;setTab("tree")}
+$("#cpt").onclick=()=>{if(curTree)navigator.clipboard.writeText(asText(curTree.d))};
+addEventListener("dragover",e=>e.preventDefault());
+addEventListener("drop",e=>{e.preventDefault();const t=(e.dataTransfer.getData("text/uri-list")||e.dataTransfer.getData("text/plain")||"").trim().split("\n")[0];if(/github\.com/.test(t)){$("#path").value=t;loadRemote(t)}});
+function mode(m){document.documentElement.dataset.mode=m;localStorage.loomMode=m;$("#mode").textContent=m=="light"?"🌙":"☀"}
+mode(localStorage.loomMode||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"));
+$("#mode").onclick=()=>mode(document.documentElement.dataset.mode=="light"?"dark":"light");
+const hp=v=>$("#help").hidden=!v;$("#helpb").onclick=()=>hp(true);$("#hx").onclick=()=>hp(false);$("#help").onclick=e=>{if(e.target.id=="help")hp(false)};
+addEventListener("keydown",e=>{if(e.key=="Escape")hp(false);else if(e.key=="?"&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))hp(true)});
+$("#rmf").onsubmit=e=>{e.preventDefault();const v=$("#rurl").value.trim();if(v)act("set_remote",{url:v})};
+$("#pt").onclick=()=>{const t=$("#tok").value;if(!t){view("Paste a GitHub token first (Help → Push over HTTPS).");return}act("push_https",{token:t,upstream:!st.up,branch:st.branch})};
+document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
+  const a=b.dataset.a;
+  if(a=="commit")act("commit",{message:$("#msg").value}).then(()=>{$("#msg").value=""});
+  else if(a=="push")act("push",{upstream:!st.up,branch:st.branch});
+  else act(a);
+});
+$("#open").onsubmit=e=>{e.preventDefault();const v=$("#path").value.trim();
+  if(/github\.com|^git@/.test(v)){loadRemote(v);return}
+  path=v;rmap=null;localStorage.loomPath=path;refresh();setTab("tree")};
+$("#nbf").onsubmit=e=>{e.preventDefault();const v=$("#nb").value.trim();if(v){act("new_branch",{branch:v});$("#nb").value=""}};
+$("#cmdf").onsubmit=e=>{e.preventDefault();const v=$("#cmd").value.trim();if(v){act("raw",{cmd:v});$("#cmd").value=""}};
+
+let lastLog,prevSig=null,prevAB;
+const GL={status:"◉",add:"＋",commit:"●",push:"↑",pull:"↓",fetch:"⇣",stash:"▤",switch:"⎇",branch:"⎇",log:"≡",diff:"±",reset:"↺",init:"✦"};
+const flash=(c,ms)=>{document.body.classList.remove(c);void document.body.offsetWidth;document.body.classList.add(c);setTimeout(()=>document.body.classList.remove(c),ms)};
+function ambient(a,args,r){
+  const raw=(args.cmd||""),t=a=="raw"?raw.replace(/^git\s+/,"").split(/\s+/)[0]:a,R=document.documentElement;
+  if(/^push/.test(t))R.style.setProperty("--dy","-100px");else if(t=="pull")R.style.setProperty("--dy","100px");
+  $(".cur").style.animationDuration=Math.max(.3,Math.min(2.4,(r.duration||.3)*2))+"s";
+  if(a=="stash"||/^(git\s+)?(reset|clean|rebase)\b|--force|\s-f\b|branch\s+-D|checkout\s+--|restore\b|stash\s+(drop|clear)/.test(raw))flash("pulse",900);
+  if(a=="commit"&&!r.exit_code)flash("bow",2000);
+}
+function typeInto(el,txt){let i=0;const k=Math.max(2,Math.ceil(txt.length/90)),iv=setInterval(()=>{i+=k;el.textContent=txt.slice(0,i);if(i>=txt.length)clearInterval(iv)},16)}
+$("#fclr").onclick=()=>document.querySelectorAll("#feed .card:not(.pin):not(.run)").forEach(c=>c.remove());
+function keepPins(){[...document.querySelectorAll("#feed .card.pin")].reverse().forEach(p=>$("#feed").prepend(p))}
+const fx=f=>prevSig?(!(f.name in prevSig)?" slide":prevSig[f.name]!=f.x+f.y?" pulse":""):"";
+function fx2(c){
+  const sig={};(st.files||[]).forEach(f=>sig[f.name]=f.x+f.y);
+  if(prevSig&&st.branch){const g=Object.keys(prevSig).filter(k=>!(k in sig));
+    if(g.length){$("#files").insertAdjacentHTML("beforeend",g.map(k=>'<div class="it gh"><span class="fn">'+esc(k)+"</span></div>").join(""));setTimeout(()=>document.querySelectorAll("#files .gh").forEach(x=>x.remove()),1000)}}
+  prevSig=st.branch?sig:null;
+  const conf=(st.files||[]).some(f=>f.x=="U"||f.y=="U"||f.x+f.y=="AA"||f.x+f.y=="DD");
+  document.documentElement.dataset.state=!st.branch?"":conf?"conflict":c?"dirty":"clean";
+  $("#bar").classList.toggle("sync",!!(path&&st.up&&!c&&!st.ahead&&!st.behind));
+  const k=(st.ahead||0)+"/"+(st.behind||0);if(prevAB!==undefined&&k!=prevAB&&$("#ah"))$("#ah").classList.add("step");prevAB=k;
+}
+const ag=document.querySelector("main aside:last-child");
+$("#files").addEventListener("dragstart",e=>{const it=e.target.closest("[data-i]");if(it)e.dataTransfer.setData("application/x-loom",st.files[+it.dataset.i].name)});
+ag.addEventListener("dragover",e=>{if(e.dataTransfer.types.includes("application/x-loom"))e.preventDefault()});
+ag.addEventListener("drop",e=>{const n=e.dataTransfer.getData("application/x-loom");if(n){e.preventDefault();e.stopPropagation();act("add",{file:n})}});
+
+// read-only file viewer
+const KW="def class return if elif else for while import from as try except finally with lambda yield async await function const let var new this export default switch case break continue throw catch typeof null true false True False None self fn pub struct impl use mod enum interface type extends implements public private static void int string bool package func go defer range in is not and or del pass raise global";
+const SL="js,mjs,cjs,ts,jsx,tsx,c,h,cpp,hpp,java,go,rs,cs,swift,kt,php,scss,json,jsonc".split(","),HS="py,sh,bash,zsh,rb,yml,yaml,toml,conf,ini,pl,r,mk,gitignore".split(",");
+function hl(code,name){
+  const ext=(name.includes(".")?name.split(".").pop():name).toLowerCase();
+  let C="(?!)",kw=false;
+  if(SL.includes(ext)){C="\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/";kw=true}
+  else if(HS.includes(ext)){C="#[^\\n]*";kw=true}
+  else if(ext=="css")C="\\/\\*[\\s\\S]*?\\*\\/";
+  else if(ext=="html"||ext=="xml"||ext=="svg")C="<!--[\\s\\S]*?-->";
+  else return esc(code);
+  if(code.length>300000)return esc(code);
+  const re=new RegExp("("+C+")|(\"(?:\\\\.|[^\"\\\\\\n])*\"|'(?:\\\\.|[^'\\\\\\n])*'|`(?:\\\\.|[^`\\\\])*`)|(\\b\\d[\\d_.]*\\b)|"+(kw?"(\\b(?:"+KW.split(" ").join("|")+")\\b)":"(?!)"),"g");
+  let out="",last=0,m;
+  while((m=re.exec(code))){
+    out+=esc(code.slice(last,m.index));
+    const cls=m[1]?"c":m[2]?"s":m[3]?"n":"k";
+    out+='<span class="'+cls+'">'+esc(m[0])+"</span>";last=m.index+m[0].length;
+  }
+  return out+esc(code.slice(last));
+}
+let fvText="",fvId=0;
+function fvClose(){$("#fv").hidden=true;$("#fvbody").innerHTML="";fvText=""}
+async function openFile(p,h,sz){
+  const id=++fvId;fvText="";
+  $("#fvn").textContent=p;$("#fvm").textContent="";$("#fvc").hidden=true;
+  $("#fvbody").innerHTML='<div class="msg">Loading…</div>';$("#fv").hidden=false;
+  const [url,body]=rmap?["/api/remote_file",{repo:rmap.repo,sha:h,name:p,size:sz,token:$("#tok").value}]:["/api/file",{path,file:p}];
+  let r,j;
+  try{r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","X-Loom-Token":TOKEN},body:JSON.stringify(body)});j=await r.json().catch(()=>({}))}
+  catch(e){r={ok:false};j={detail:String(e)}}
+  if(id!=fvId)return;  // a newer file was opened
+  const box=$("#fvbody"),msg=t=>box.innerHTML='<div class="msg">'+esc(t)+"</div>";
+  if(!r.ok){msg("✗ "+(j.detail||j.error||"could not open file"));return}
+  $("#fvm").textContent=fmt(j.size)||"empty";
+  if(j.kind=="text"){
+    fvText=j.text;$("#fvc").hidden=false;
+    const n=j.text.split("\n").length;$("#fvm").textContent+=" · "+n+" lines · read-only";
+    box.innerHTML='<pre class="gut">'+Array.from({length:n},(_,i)=>i+1).join("\n")+'</pre><pre class="code">'+hl(j.text,p.split("/").pop())+"</pre>";
+  }else if(j.kind=="image"){
+    box.innerHTML='<div class="img"><img alt=""></div>';const im=box.querySelector("img");
+    im.onload=()=>$("#fvm").textContent=im.naturalWidth+"×"+im.naturalHeight+" · "+fmt(j.size)+" · read-only";
+    im.src="data:"+j.mime+";base64,"+j.data;
+  }else msg(j.kind=="big"?"File is too large to preview ("+fmt(j.size)+").":"Binary file, no preview available.");
+}
+$("#view").addEventListener("click",e=>{const f=e.target.closest(".tf[data-p]");if(f)openFile(f.dataset.p,f.dataset.h,+f.dataset.s||0)});
+$("#fvx").onclick=fvClose;
+$("#fv").addEventListener("mousedown",e=>{if(e.target.id=="fv")fvClose()});
+$("#fvc").onclick=()=>{navigator.clipboard.writeText(fvText);$("#fvc").textContent="Copied ✓";setTimeout(()=>$("#fvc").textContent="Copy",1200)};
+
+// graph
+const col=l=>["var(--ac)","var(--ac2)","#f5c542","#bd93f9","#ff79c6"][l%5];
+const ago=iso=>{const s=(Date.now()-new Date(iso))/1000;if(!(s>=0))return"";const u=[[31536000,"year"],[2592000,"month"],[604800,"week"],[86400,"day"],[3600,"hour"],[60,"minute"]];
+  for(const[n,w]of u)if(s>=n){const k=Math.floor(s/n);return k+" "+w+(k>1?"s":"")+" ago"}return"just now"};
+async function showGraph(){
+  let cs;
+  if(rmap){
+    const want=rmap;view("Loading commits for "+rmap.repo+" …");
+    const r=await fetch("/api/remote_graph",{method:"POST",headers:{"Content-Type":"application/json","X-Loom-Token":TOKEN},body:JSON.stringify({repo:rmap.repo,branch:rmap.branch,token:$("#tok").value})});
+    const j=await r.json().catch(()=>({}));
+    if(tab!="graph"||rmap!==want)return;  // user moved on while we were loading
+    if(!r.ok){view("✗ "+(j.detail||j.error||"request failed"));return}
+    cs=j.commits.map(c=>({...c,t:ago(c.t)}));if(!cs.length){view("No commits");return}
+  }else{
+    if(!path){view("Open a repo first.");return}
+    const r=await api("graphlog");if(r.exit_code||!r.stdout.trim()){view(r.stderr||"No commits yet");return}
+    cs=r.stdout.split("\n").filter(Boolean).map(l=>{const [h,p,d,s,a,t]=l.split("\x1f");return{h,p:p?p.split(" "):[],d,s,a,t}});
+  }
+  const idx={};cs.forEach((c,i)=>idx[c.h]=i);let lanes=[],mx=0;
+  cs.forEach(c=>{let i=lanes.indexOf(c.h);if(i<0){i=lanes.indexOf(null);if(i<0)i=lanes.length}
+    lanes.forEach((x,j)=>{if(x===c.h&&j!=i)lanes[j]=null});c.l=i;lanes[i]=c.p[0]||null;
+    c.p.slice(1).forEach(q=>{if(!lanes.includes(q)){let j=lanes.indexOf(null);if(j<0)j=lanes.length;lanes[j]=q}});mx=Math.max(mx,i)});
+  const RH=34,X=l=>16+l*22,Y=i=>20+i*RH,tx=X(mx)+26;let ed="",nd="";
+  cs.forEach((c,i)=>c.p.forEach(q=>{const j=idx[q];if(j==null)return;const P=cs[j],m=(Y(i)+Y(j))/2;
+    ed+='<path class="ed" pathLength="1" style="animation-delay:'+i*40+'ms" stroke="'+col(Math.max(c.l,P.l))+'" d="M'+X(c.l)+" "+Y(i)+"C"+X(c.l)+" "+m+","+X(P.l)+" "+m+","+X(P.l)+" "+Y(j)+'"/>'}));
+  cs.forEach((c,i)=>{const refs=(c.d||"").split(", ").filter(Boolean),tg=refs.filter(x=>x.startsWith("tag: ")).map(x=>x.slice(5)),br=refs.filter(x=>!x.startsWith("tag: ")).map(x=>x.replace("HEAD -> ","⎇ "));
+    const cx=X(c.l),cy=Y(i);
+    nd+='<g class="nd" style="animation-delay:'+i*40+'ms" data-m="'+esc(c.s+" — "+c.a+", "+c.t)+'"><circle class="ring" cx="'+cx+'" cy="'+cy+'" r="5" stroke="'+col(c.l)+'"/><circle cx="'+cx+'" cy="'+cy+'" r="5" fill="'+col(c.l)+'"/>'
+      +(tg.length?'<g transform="translate('+(cx+9)+","+(cy-9)+')" fill="none" stroke="#f5c542" stroke-width="1.5"><circle r="3.5"/><circle cx="4" r="3.5"/></g>':"")
+      +'<text x="'+tx+'" y="'+(cy+4)+'"><tspan fill="var(--dim)">'+c.h.slice(0,7)+"  </tspan>"+esc(c.s.slice(0,60))+'<tspan fill="var(--ac2)">'+esc(br.map(x=>"  "+x).join(""))+'</tspan><tspan fill="#f5c542">'+esc(tg.map(x=>"  ⌘ "+x).join(""))+"</tspan></text></g>"});
+  $("#view").innerHTML='<svg class="gs" width="'+(tx+560)+'" height="'+(cs.length*RH+30)+'">'+ed+nd+"</svg>";
+}
+const wh=$("#whisper");
+$("#view").addEventListener("mouseover",e=>{const g=e.target.closest("[data-m]");wh.textContent=g?g.dataset.m:"";wh.style.opacity=g?1:0});
+$("#view").addEventListener("mousemove",e=>{wh.style.transform="translate("+(e.clientX+14)+"px,"+(e.clientY+14)+"px)"});
+$("#view").addEventListener("mouseleave",()=>wh.style.opacity=0);
+
+// reflog
+async function showReflog(){
+  if(rmap){view("Reflog only exists for local repos. Open a folder path to see it.");return}
+  if(!path){view("Open a repo first.");return}
+  const r=await api("reflog");if(r.exit_code||!r.stdout.trim()){view(r.stderr||"No reflog yet");return}
+  const L=r.stdout.split("\n").filter(Boolean).map(l=>l.split("\x1f")),ri=L.findIndex(x=>/^reset/.test(x[2])),g=ri>=0?ri+1:-1;
+  $("#view").innerHTML='<div class="tr"><div class="dim">Reflog: click an entry to create a branch there (nothing is overwritten).</div>'
+    +L.map((x,i)=>'<div class="rl'+(i==g?" found":"")+'" data-h="'+esc(x[0])+'"><b>'+esc(x[0].slice(0,7))+"</b> "+esc(x[1])+" "+esc(x[2])+"<small>"+esc(x[3])+"</small></div>").join("")+"</div>";
+}
+$("#view").addEventListener("click",e=>{const r=e.target.closest(".rl");if(r)act("raw",{cmd:"branch recovered-"+r.dataset.h.slice(0,7)+" "+r.dataset.h})});
+
+// palette, zen, weave
+const zen=()=>document.body.classList.toggle("zen");
+const click=a=>()=>$("[data-a="+a+"]").click(),tabTo=t=>()=>setTab(t);
+const ACTS=[{n:"Commit",k:"KeyC",f:click("commit")},{n:"Push",k:"KeyP",f:click("push")},{n:"Pull",k:"KeyL",f:click("pull")},{n:"Fetch",k:"KeyF",f:click("fetch")},
+  {n:"Add all",k:"KeyA",f:click("add_all")},{n:"Stash",k:"KeyS",f:click("stash")},{n:"Show diff",k:"KeyD",f:tabTo("diff")},{n:"Show graph",k:"KeyG",f:tabTo("graph")},
+  {n:"Show tree",k:"KeyT",f:tabTo("tree")},{n:"Show reflog",k:"KeyR",f:tabTo("reflog")},{n:"Toggle Zen Loom",k:"KeyZ",f:zen},{n:"Toggle light / dark",k:"KeyM",f:()=>$("#mode").click()},{n:"Help",k:"KeyH",f:()=>hp(true)}];
+let sel=0,shown=[];
+const score=(q,s)=>{q=q.toLowerCase();s=s.toLowerCase();let i=0,sc=0;for(const ch of q){const j=s.indexOf(ch,i);if(j<0)return -1;sc+=j==i?3:1;i=j+1}return sc};
+function palRender(){
+  const q=$("#pq").value.trim(),rc=JSON.parse(localStorage.loomRecent||"[]");
+  shown=ACTS.map(a=>({a,s:q?score(q,a.n):0})).filter(x=>x.s>=0).map(x=>({a:x.a,s:x.s+(rc.includes(x.a.n)?20-rc.indexOf(x.a.n):0)})).sort((x,y)=>y.s-x.s).map(x=>x.a);
+  sel=Math.min(sel,Math.max(0,shown.length-1));
+  $("#pl").innerHTML=shown.map((a,i)=>'<div class="'+(i==sel?"on":"")+'" data-n="'+i+'"><span>'+esc(a.n)+"</span><small>Alt+"+a.k.slice(3)+"</small></div>").join("")||'<div class="dim">No match</div>';
+}
+function pal(v){$("#pal").hidden=!v;if(v){$("#pq").value="";sel=0;palRender();$("#pq").focus()}}
+function runAct(a){const rc=JSON.parse(localStorage.loomRecent||"[]").filter(x=>x!=a.n);rc.unshift(a.n);localStorage.loomRecent=JSON.stringify(rc.slice(0,8));a.f()}
+$("#pq").oninput=()=>{if($("#pq").value.trim().toLowerCase()=="loom"){pal(false);weave();return}sel=0;palRender()};
+$("#pq").onkeydown=e=>{if(e.key=="ArrowDown"||e.key=="ArrowUp"){e.preventDefault();sel=(sel+(e.key=="ArrowDown"?1:-1)+shown.length)%shown.length;palRender()}
+  else if(e.key=="Enter"&&shown[sel]){pal(false);runAct(shown[sel])}};
+$("#pl").onclick=e=>{const d=e.target.closest("[data-n]");if(d){pal(false);runAct(shown[+d.dataset.n])}};
+$("#pal").onclick=e=>{if(e.target.id=="pal")pal(false)};
+function weave(){const o=document.createElement("div");o.id="weave";let s='<svg viewBox="0 0 100 100" preserveAspectRatio="none">';
+  for(let i=0;i<=20;i++)s+='<line pathLength="1" x1="0" x2="100" y1="'+i*5+'" y2="'+i*5+'" style="animation-delay:'+i*60+'ms"/><line class="wv" pathLength="1" y1="0" y2="100" x1="'+i*5+'" x2="'+i*5+'" style="animation-delay:'+(1200+i*60)+'ms"/>';
+  o.innerHTML=s+"</svg>";document.body.append(o);setTimeout(()=>o.remove(),3600)}
+let lastEsc=0;
+addEventListener("keydown",e=>{
+  if(e.key=="Escape"){
+    if(!$("#fv").hidden){fvClose();return}
+    if(!$("#pal").hidden){pal(false);return}
+    if(document.body.classList.contains("zen")){zen();return}
+    const n=Date.now();if(n-lastEsc<500){setTab("diff");hp(false)}lastEsc=n;
+  }else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="k"){e.preventDefault();pal($("#pal").hidden)}
+  else if(e.altKey&&!e.ctrlKey&&!e.metaKey){const a=ACTS.find(x=>x.k==e.code);if(a){e.preventDefault();runAct(a)}}
+});
+refresh();setInterval(refresh,8000);if(path)setTab("tree");
+</script>
+</body></html>
