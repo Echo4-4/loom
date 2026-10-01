@@ -150,4 +150,4 @@ All routes live under `/api/` and require the token header.
 
 Issues and pull requests are welcome. There is no build step: edit `loom.py` or `index.html` and restart.
 
-MADE BY ECHO404. Twitter: @JeffreyPeter_
+MADE BY ECHO404 - Twitter: @JeffreyPeter_
