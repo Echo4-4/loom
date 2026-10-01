@@ -133,13 +133,6 @@ Keep in mind that the command bar runs git commands as you, with the same power 
 - The viewer is read-only by design. Edit files in your usual editor.
 - Reflog is only available for local repos.
 
-## Project layout
-
-```
-loom/
-├── loom.py      # FastAPI backend: runs git, talks to the GitHub API, serves the page
-└── index.html   # the whole UI (HTML, CSS and JavaScript, no build step)
-```
 
 ### API (internal)
 
@@ -157,6 +150,4 @@ All routes live under `/api/` and require the token header.
 
 Issues and pull requests are welcome. There is no build step: edit `loom.py` or `index.html` and restart.
 
-## License
-
-Add a license of your choice (for example MIT) as a `LICENSE` file and name it here.
+MADE BY ECHO404. Twitter: @JeffreyPeter_
