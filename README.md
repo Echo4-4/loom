@@ -68,6 +68,37 @@ python loom.py --no-browser       # don't auto-open the browser
 python loom.py help               # print the usage guide
 ```
 
+
+```markdown
+### Make executable globally (Optional)
+
+To run Loom from any folder by just typing `loom` instead of `python loom.py`:
+
+1. **Create the global launcher:**  
+   *(Run this command from inside the cloned `loom` directory)*
+   ```bash
+   mkdir -p ~/.local/bin
+   cat << EOF > ~/.local/bin/loom
+   #!/usr/bin/env bash
+   python3 "$(pwd)/loom.py" "\$@"
+   EOF
+   chmod +x ~/.local/bin/loom
+   ```
+
+2. **Ensure `~/.local/bin` is in your PATH:**  
+   If you cannot run `loom` immediately, ensure your shell knows where to find the custom commands:
+
+   * **For Zsh (`zsh`):**
+     ```zsh
+     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+     ```
+
+   * **For Bash (`bash`):**
+     ```bash
+     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+     ```
+
+
 Loom prints a URL such as `http://127.0.0.1:8765/?token=...` and opens it in your browser. The token changes on every run.
 
 ## Usage
