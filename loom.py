@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Loom - weave your branches. Local-first web UI for git."""
-import argparse, base64, difflib, filecmp, hashlib, json, shutil, os, re, secrets, shlex, subprocess, threading, time, webbrowser
+import argparse, base64, difflib, filecmp, hashlib, json, shutil, sys, os, re, secrets, shlex, subprocess, threading, time, webbrowser
 import urllib.error, urllib.request
 from pathlib import Path
 from typing import Optional
@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
-HERE = Path(__file__).parent
+HERE = Path(__file__).resolve().parent
 TOKEN = secrets.token_urlsafe(24)
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -517,7 +517,26 @@ PUSH OVER HTTPS
   then push once from the terminal; Loom's normal Push button works after.
 """
 
+BANNER = """
+██╗      ██████╗  ██████╗ ███╗   ███╗
+██║     ██╔═══██╗██╔═══██╗████╗ ████║
+██║     ██║   ██║██║   ██║██╔████╔██║
+██║     ██║   ██║██║   ██║██║╚██╔╝██║
+███████╗╚██████╔╝╚██████╔╝██║ ╚═╝ ██║
+╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
+"""
+
+
+def banner():
+    """Print the logo first, before anything else (colour only on a real terminal)."""
+    color = sys.stdout.isatty() and "NO_COLOR" not in os.environ
+    for line, c in zip(BANNER.strip("\n").split("\n"), (48, 49, 50, 44, 45, 39)):
+        print(f"\033[38;5;{c}m{line}\033[0m" if color else line)
+    print("  Git & GitHub, made easy.\n")
+
+
 if __name__ == "__main__":
+    banner()
     ap = argparse.ArgumentParser(description="Loom - Git & GitHub, made easy. Local-first dashboard.",
                                  epilog="Run `python loom.py help` for the full guide.",
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
