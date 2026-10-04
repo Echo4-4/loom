@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Loom - weave your branches. Local-first web UI for git."""
-import argparse, base64, json, os, re, secrets, shlex, subprocess, threading, time, webbrowser
+import argparse, base64, difflib, filecmp, hashlib, json, shutil, os, re, secrets, shlex, subprocess, threading, time, webbrowser
 import urllib.error, urllib.request
 from pathlib import Path
+from typing import Optional
 from urllib.parse import quote
 
 import uvicorn
@@ -254,6 +255,228 @@ def remote_file(r: RFile):
     return payload(r.name, base64.b64decode(b.get("content", "")))
 
 
+# ---- Compare: this repo vs another folder / file ---------------------------
+SKIP = {".git", "node_modules", "__pycache__", ".venv", "venv", ".mypy_cache", ".pytest_cache"}
+MAX_FILES, MAX_DIFF = 20000, 600_000
+BAK = Path.home() / ".loom-backups"
+
+
+def sides(path, other):
+    if not (other or "").strip():
+        raise HTTPException(400, "enter the other folder or file path")
+    a, b = Path(path).expanduser(), Path(other.strip()).expanduser()
+    if not a.is_dir():
+        raise HTTPException(400, "not a directory: " + path)
+    if not b.exists():
+        raise HTTPException(400, "not found: " + other)
+    return a.resolve(), b.resolve()
+
+
+def pair(path, other, rel):
+    """Validate a repo-relative file and return (repo_root, repo_file, other_file). Only the repo side is ever written."""
+    a, b = sides(path, other)
+    rel = (rel or "").strip().strip("/")
+    pa = (a / rel).resolve()
+    if not rel or pa == a or not pa.is_relative_to(a) or ".git" in Path(rel).parts:
+        raise HTTPException(400, "bad file path")
+    if b.is_file():
+        return a, pa, b
+    pb = (b / rel).resolve()
+    if not pb.is_relative_to(b):
+        raise HTTPException(400, "bad file path")
+    return a, pa, pb
+
+
+def listing(root):
+    """{relative path: absolute path}. Uses git's ignore rules when root is a repo."""
+    if (root / ".git").exists():
+        r = run_git(["ls-files", "-z", "-co", "--exclude-standard"], str(root))
+        if not r["exit_code"]:
+            names = [n for n in r["stdout"].split("\0") if n and ".git" not in n.split("/")]
+            return {n: str(root / n) for n in names
+                    if (root / n).is_file() and not (root / n).is_symlink()}
+    out = {}
+    for d, dirs, files in os.walk(root):
+        dirs[:] = [x for x in dirs if x not in SKIP and not os.path.islink(os.path.join(d, x))]
+        for f in files:
+            fp = os.path.join(d, f)
+            if not os.path.islink(fp):
+                out[os.path.relpath(fp, root).replace(os.sep, "/")] = fp
+        if len(out) > MAX_FILES:
+            raise HTTPException(400, f"too many files to compare (limit {MAX_FILES})")
+    return out
+
+
+def ignored(root, names):
+    """Which of these names does the repo at root git-ignore?"""
+    if not names or not (root / ".git").exists():
+        return set()
+    try:
+        p = subprocess.run(["git", "check-ignore", "--no-index", "-z", "--stdin"], cwd=root,
+                           input="\0".join(names) + "\0", capture_output=True, text=True, timeout=60)
+        return {n for n in p.stdout.split("\0") if n}
+    except Exception:
+        return set()
+
+
+def is_bin(p):
+    try:
+        if os.path.getsize(p) > MAX_DIFF:
+            return True
+        with open(p, "rb") as f:
+            return b"\0" in f.read(8000)
+    except OSError:
+        return True
+
+
+def same(pa, pb, eol):
+    if os.path.getsize(pa) == os.path.getsize(pb) and filecmp.cmp(pa, pb, shallow=False):
+        return True
+    if not eol or is_bin(pa) or is_bin(pb):
+        return False
+    return Path(pa).read_bytes().replace(b"\r\n", b"\n") == Path(pb).read_bytes().replace(b"\r\n", b"\n")
+
+
+def entry(rel, pa, pb):
+    return {"p": rel, "sa": os.path.getsize(pa) if pa else 0, "sb": os.path.getsize(pb) if pb else 0,
+            "bin": any(is_bin(x) for x in (pa, pb) if x)}
+
+
+class Cmp(BaseModel):
+    path: str
+    other: str
+    target: str = ""
+    eol: bool = True
+
+
+@app.post("/api/compare")
+def compare(r: Cmp):
+    a, b = sides(r.path, r.other)
+    if b.is_file():
+        rel = (r.target or b.name).strip().strip("/")
+        pa = (a / rel).resolve()
+        if not rel or not pa.is_relative_to(a) or ".git" in Path(rel).parts:
+            raise HTTPException(400, "bad repo file name")
+        fa, fb = ({rel: str(pa)} if pa.is_file() else {}), {rel: str(b)}
+    else:
+        if a == b or a.is_relative_to(b) or b.is_relative_to(a):
+            raise HTTPException(400, "pick a folder that is not the repo itself or inside/around it")
+        fa, fb = listing(a), listing(b)
+        for n in ignored(a, list(fb)) - set(fa):   # skip build junk / secrets this repo ignores
+            fb.pop(n, None)
+    out = {"changed": [], "only_a": [], "only_b": [], "same": 0}
+    for rel in sorted(fa.keys() | fb.keys()):
+        x, y = fa.get(rel), fb.get(rel)
+        if x and y:
+            if same(x, y, r.eol):
+                out["same"] += 1
+            else:
+                out["changed"].append(entry(rel, x, y))
+        elif y:
+            out["only_b"].append(entry(rel, None, y))
+        else:
+            out["only_a"].append(entry(rel, x, None))
+    return out
+
+
+def split(p):
+    """(bytes, lines) of a UTF-8 text file; a missing file is empty."""
+    b = p.read_bytes() if p.is_file() else b""
+    if len(b) > MAX_DIFF or b"\0" in b[:8000]:
+        raise ValueError("binary or too large to merge line by line")
+    try:
+        return b, b.decode("utf-8").splitlines(True)
+    except UnicodeDecodeError:
+        raise ValueError("not UTF-8 text")
+
+
+def opcodes(la, lb):
+    k = lambda L: [x.rstrip("\r\n") for x in L]   # line endings never count as a difference
+    return difflib.SequenceMatcher(None, k(la), k(lb), autojunk=False).get_opcodes()
+
+
+def glue(parts):
+    s = ""
+    for x in parts:
+        s += ("\n" if s and x and not s.endswith("\n") else "") + x
+    return s
+
+
+class CFile(BaseModel):
+    path: str
+    other: str
+    rel: str
+
+
+@app.post("/api/compare_file")
+def compare_file(r: CFile):
+    a, pa, pb = pair(r.path, r.other, r.rel)
+    try:
+        ba, la = split(pa)
+        _, lb = split(pb)
+    except ValueError:
+        return {"kind": "binary"}
+    return {"kind": "text", "a": la, "b": lb, "ops": [list(o) for o in opcodes(la, lb)],
+            "base": hashlib.sha1(ba).hexdigest()}
+
+
+class Item(BaseModel):
+    rel: str
+    mode: str                      # take | join | merge | delete
+    content: Optional[str] = None  # merge: the finished text
+    base: Optional[str] = None     # merge: hash of the repo file when the review opened
+
+
+class Apply(BaseModel):
+    path: str
+    other: str
+    items: list[Item]
+
+
+@app.post("/api/apply")
+def apply(r: Apply):
+    """Write results into the repo side only. Every overwritten/deleted file is backed up first."""
+    stamp, used, res = time.strftime("%Y%m%d-%H%M%S"), None, []
+    for it in r.items:
+        try:
+            a, pa, pb = pair(r.path, r.other, it.rel)
+            data = None
+            if it.mode == "take":
+                if not pb.is_file():
+                    raise ValueError("the other side has no such file")
+            elif it.mode == "merge":
+                cur = pa.read_bytes() if pa.is_file() else b""
+                if it.content is None or it.base != hashlib.sha1(cur).hexdigest():
+                    raise ValueError("file changed since the review opened - review it again")
+                data = it.content
+            elif it.mode == "join":
+                la, lb = split(pa)[1], split(pb)[1]
+                data = glue(["".join(la[i1:i2]) if t == "equal" else
+                             glue(["".join(la[i1:i2]), "".join(lb[j1:j2])])
+                             for t, i1, i2, j1, j2 in opcodes(la, lb)])
+            elif it.mode != "delete":
+                raise ValueError("unknown mode")
+            if pa.is_file():
+                bdir = BAK / hashlib.sha1(str(a).encode()).hexdigest()[:10] / stamp
+                dst = bdir / pa.relative_to(a)
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(pa, dst)
+                used = bdir
+            if it.mode == "delete":
+                if pa.is_file():
+                    pa.unlink()
+            else:
+                pa.parent.mkdir(parents=True, exist_ok=True)
+                if it.mode == "take":
+                    shutil.copyfile(pb, pa)
+                else:
+                    pa.write_bytes(data.encode("utf-8"))
+            res.append({"p": it.rel, "ok": True})
+        except (ValueError, OSError, HTTPException) as e:
+            res.append({"p": it.rel, "ok": False, "err": str(getattr(e, "detail", e))})
+    return {"results": res, "backup": str(used) if used else ""}
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
     return (HERE / "index.html").read_text(encoding="utf-8")
@@ -276,6 +499,10 @@ IN THE PAGE
                 GitHub link (https://github.com/owner/repo) onto the page.
   Daily flow    + stage files -> write a message -> Commit -> Push.
   Command bar   type any git command, e.g. git log --oneline -10
+  Compare       Compare tab: pick another folder (or file) to see what differs,
+                then merge hunks, join, replace or copy into the repo. The other
+                side is never changed; overwritten files are backed up to
+                ~/.loom-backups first.
   Help          press ? or click Help for the full in-app guide.
 
 PUSH OVER HTTPS

@@ -117,6 +117,23 @@ footer{transition:background 1s}footer.sync{background:color-mix(in srgb,#39ff88
 .zen header,.zen main,.zen footer{opacity:0;pointer-events:none}header,main,footer{transition:opacity .6s}
 .zen #shuttle{display:block;animation:ride 9s ease-in-out infinite alternate}@keyframes ride{from{left:12vw;top:30%}to{left:calc(94vw - 46px);top:70%}}
 @media(prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+.cmp .row{margin:8px 0}.cmp label{display:flex;gap:8px;align-items:center;cursor:pointer}.cmp input[type=checkbox]{width:auto}
+.cg{margin:16px 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}.cg .sp{flex:1}
+.cg .btn{text-transform:none;letter-spacing:0}
+.cr{display:flex;gap:8px;align-items:center;padding:3px 6px;border-radius:8px}.cr:hover{background:#ffffff0a}.cr .fn{flex:1;min-width:0}.cr small{color:var(--dim);white-space:nowrap}
+.cr .btn,.cg .btn{padding:2px 10px;font-size:12px}
+#cm{position:fixed;inset:0;z-index:11;background:#000b;display:flex;align-items:center;justify-content:center}#cm[hidden]{display:none}
+#cm .fvh{flex-wrap:wrap}#cmbody{flex:1;overflow:auto;padding:4px 14px 14px;font:12.5px/1.5 var(--mono);min-height:0}
+#cmbody .msg{margin:40px auto;color:var(--dim);text-align:center;line-height:1.7}
+.hk{border:1px solid var(--line);border-radius:10px;margin:12px 0;overflow:hidden}
+.hh{display:flex;gap:10px;align-items:center;padding:6px 10px;background:#0004;flex-wrap:wrap}.hh small{color:var(--dim)}.hh .sp{flex:1}
+.hh button{font:12px var(--mono);color:var(--tx);background:none;border:1px solid var(--line);border-radius:999px;padding:2px 10px;cursor:pointer}.hh button.on{background:var(--ac);color:#041;border-color:transparent;font-weight:600}
+.sd{white-space:pre;overflow-x:auto;padding-bottom:2px}.sd::before{content:attr(data-l);display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:3px 10px 0}
+.sd div{padding:0 10px;min-height:1.5em}.sd.ra div:not(.dim){background:color-mix(in srgb,var(--dg) 15%,transparent)}.sd.rb div:not(.dim){background:color-mix(in srgb,var(--ac) 15%,transparent)}
+.sd i,.cx i{color:var(--dim);font-style:normal;display:inline-block;width:4ch;text-align:right;margin-right:12px;user-select:none}
+.hk[data-ch=a] .rb,.hk[data-ch=b] .ra{opacity:.28}
+.cx{white-space:pre;color:var(--dim);padding:0 10px}
 </style></head>
 <body>
 <header>
@@ -138,7 +155,7 @@ footer{transition:background 1s}footer.sync{background:color-mix(in srgb,#39ff88
 <h3><i class="dot" style="--c:var(--ac2)"></i>Files</h3><div id="files"></div>
 </aside>
 <section class="panel">
-<div class="tabs"><button data-t="diff" class="on">Diff</button><button data-t="graph">Graph</button><button data-t="tree">Tree</button><button data-t="reflog">Reflog</button><button class="btn ghost" id="cpt" style="margin-left:auto">Copy tree</button></div>
+<div class="tabs"><button data-t="diff" class="on">Diff</button><button data-t="graph">Graph</button><button data-t="tree">Tree</button><button data-t="reflog">Reflog</button><button data-t="compare">Compare</button><button class="btn ghost" id="cpt" style="margin-left:auto">Copy tree</button></div>
 <pre id="view">Paste a folder path above to open a local repo, or a GitHub link
 (or drag one onto this page) to see it as a tree.
 
@@ -163,6 +180,7 @@ Press ? for help.</pre>
 </main>
 <footer id="bar"></footer>
 <div id="fv" hidden><div class="fvb"><div class="fvh"><b id="fvn"></b><small id="fvm"></small><span class="sp"></span><button class="btn ghost" id="fvc">Copy</button><button class="btn ghost" id="fvx">Close ✕</button></div><div id="fvbody"></div></div></div>
+<div id="cm" hidden><div class="fvb"><div class="fvh"><b id="cmn"></b><small id="cmm"></small><span class="sp"></span><button class="btn ghost" data-v="a">Keep all repo</button><button class="btn ghost" data-v="b">Take all other</button><button class="btn ghost" data-v="ab">Join all</button><button class="btn pri" id="cms" disabled>Save merge</button><button class="btn ghost" id="cmx">Close ✕</button></div><div id="cmbody"></div></div></div>
 <div id="help" hidden><div class="hb">
 <div class="row"><h2>Loom help</h2><button class="btn ghost" id="hx">Close ✕</button></div>
 <p>Loom is a private dashboard for Git and GitHub. It runs only on your machine (127.0.0.1) and shows every git command it runs.</p>
@@ -175,6 +193,8 @@ Press ? for help.</pre>
 <p>The token stays in this page's memory and is passed to git for that one push. It is not saved in <code>.git/config</code> (needs git 2.31+). To avoid pasting it, run <code>git config --global credential.helper store</code> in a terminal, push once there, then use the normal <b>Push</b> button.</p>
 <h4>Buttons</h4>
 <p><b>Fetch</b> checks the remote. <b>Pull</b> brings changes in. <b>Stash</b> shelves your edits and <b>Pop</b> brings them back. <b>Init</b> makes a new repo. Click a branch to switch, or type a name and <code>+</code> to create one. The bottom box runs any git command.</p>
+<h4>Compare folders</h4>
+<p>Open the <b>Compare</b> tab, paste another folder (or a single file) and click Compare. Loom lists files that are different, only in the other folder, or only in this repo. <b>Review &amp; merge</b> lets you pick repo, other or both for every changed block. <b>Take other</b> replaces (or copies in) the other version. <b>Join both</b> keeps both sides' lines. <b>Delete</b> removes a repo-only file. Tick several files to act on them at once. The other side is never changed, and every overwritten file is backed up to <code>~/.loom-backups</code> first.</p>
 <h4>Terminal</h4>
 <pre>python loom.py help
 python loom.py /path/to/repo
@@ -252,7 +272,7 @@ $("#files").onclick=async e=>{
   const r=await api("diff",{file:f.name,staged});view(r.stdout||r.stderr||"(no diff)");
 };
 function setTab(t){tab=t;document.querySelectorAll(".tabs button[data-t]").forEach(x=>x.classList.toggle("on",x.dataset.t==t));
-  if(t=="graph")showGraph();else if(t=="reflog")showReflog();else if(t=="tree")showTree();else view("Pick a file on the left to see its diff.")}
+  if(t=="graph")showGraph();else if(t=="reflog")showReflog();else if(t=="tree")showTree();else if(t=="compare")showCompare();else view("Pick a file on the left to see its diff.")}
 document.querySelectorAll(".tabs button[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 const srt=([a,x],[b,y])=>(!!x.f-!!y.f)||a.localeCompare(b);
 const fmt=b=>b>1e6?(b/1e6).toFixed(1)+" MB":b>1e3?(b/1e3).toFixed(1)+" KB":b?b+" B":"";
@@ -425,12 +445,106 @@ async function showReflog(){
 }
 $("#view").addEventListener("click",e=>{const r=e.target.closest(".rl");if(r)act("raw",{cmd:"branch recovered-"+r.dataset.h.slice(0,7)+" "+r.dataset.h})});
 
+// compare: this repo vs another folder / file
+async function post(url,body){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","X-Loom-Token":TOKEN},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(typeof j.detail=="string"?j.detail:Array.isArray(j.detail)?j.detail.map(d=>(d.loc||[]).slice(1).join(".")+" "+d.msg).join("; "):j.error||"request failed");return j}
+let cmpIn={other:localStorage.loomOther||"",target:"",eol:true},cmp=null,cmpSkip=new Set(),rv=null;
+const GRP=[["changed","Different"],["only_b","Only in other"],["only_a","Only in this repo"]];
+const GBTN={changed:'<button class="btn ghost" data-k="take">Take other</button><button class="btn ghost" data-k="join">Join both</button>',
+  only_b:'<button class="btn ghost" data-k="take">Copy into repo</button>',only_a:'<button class="btn ghost" data-k="del">Delete from repo</button>'};
+function showCompare(){
+  if(rmap){view("Compare works on local repos. Open a folder path first.");return}
+  if(!path){view("Open a repo first.");return}
+  drawCmp()}
+async function runCmp(note){
+  if(!cmpIn.other){drawCmp("Enter the other folder or file path.");return}
+  localStorage.loomOther=cmpIn.other;drawCmp("Comparing …",true);
+  try{cmp=await post("/api/compare",{path,...cmpIn});drawCmp(note)}
+  catch(e){cmp=null;drawCmp("✗ "+e.message)}}
+function crows(g,list){
+  return list.map(x=>{
+    const sz=g=="changed"?fmt(x.sa)+" → "+fmt(x.sb):fmt(g=="only_b"?x.sb:x.sa);
+    const b=g=="changed"?(x.bin?'<small>binary</small>':'<button class="btn ghost" data-k="review">Review &amp; merge</button>')+'<button class="btn ghost" data-k="take">Take other</button>'
+      :g=="only_b"?(x.bin?'<small>binary</small>':'<button class="btn ghost" data-k="review">Preview</button>')+'<button class="btn ghost" data-k="take">Copy in</button>'
+      :'<button class="btn ghost" data-k="view">View</button><button class="btn ghost" data-k="del">Delete</button>';
+    return '<div class="cr" data-g="'+g+'" data-r="'+esc(x.p)+'"><input type="checkbox" data-k="sel"><span class="fn" title="'+esc(x.p)+'">'+esc(x.p)+'</span><small>'+esc(sz)+'</small>'+b
+      +'<button class="btn ghost" data-k="skip">'+(g=="changed"?"Keep mine":g=="only_a"?"Keep":"Skip")+"</button></div>"}).join("")}
+function drawCmp(note,busy){
+  if(tab!="compare")return;
+  let h='<div class="tr cmp"><div class="dim">Compare this repo with another folder (or one file). The other side is never changed. Results are written to this repo, and overwritten files are backed up to ~/.loom-backups first.</div>'
+   +'<form id="cmpf" class="row"><input id="cmpo" placeholder="/path/to/other/folder  or  /path/to/file.py" value="'+esc(cmpIn.other)+'"><input id="cmpt" placeholder="repo file name (if other is a file)" value="'+esc(cmpIn.target)+'" style="max-width:250px"><button class="btn pri">Compare</button></form>'
+   +'<label class="dim"><input type="checkbox" id="cmpe"'+(cmpIn.eol?" checked":"")+'>Ignore line-ending differences (CRLF vs LF)</label><div id="cmpmsg" class="dim">'+esc(note||"")+"</div>";
+  if(cmp&&!busy){
+    h+='<div class="dim">'+cmp.changed.length+" different · "+cmp.only_b.length+" only in other · "+cmp.only_a.length+" only in this repo · "+cmp.same+" identical</div>";
+    if(!cmp.changed.length&&!cmp.only_a.length&&!cmp.only_b.length)h+='<div class="dim">✓ Nothing differs.</div>';
+    for(const[g,t]of GRP){const l=cmp[g].filter(x=>!cmpSkip.has(g+":"+x.p));if(!l.length)continue;
+      h+='<div class="cg" data-g="'+g+'"><input type="checkbox" data-k="all" title="Select all"><span>'+t+" · "+l.length+'</span><span class="sp"></span>'+GBTN[g]+"</div>"+crows(g,l)}}
+  $("#view").innerHTML=h+"</div>";
+  $("#cmpf").onsubmit=e=>{e.preventDefault();cmpIn={other:$("#cmpo").value.trim(),target:$("#cmpt").value.trim(),eol:$("#cmpe").checked};cmpSkip.clear();runCmp()}}
+async function cmpApply(items){
+  try{const j=await post("/api/apply",{path,other:cmpIn.other,items});
+    const bad=j.results.filter(x=>!x.ok),ok=j.results.length-bad.length;
+    await runCmp((ok?"✓ "+ok+" file"+(ok>1?"s":"")+" updated"+(j.backup?" · backup in "+j.backup:""):"")+(bad.length?" ✗ failed: "+bad.map(x=>x.p+" ("+x.err+")").join("; "):""));
+    refresh()}
+  catch(e){drawCmp("✗ "+e.message)}}
+function bulk(g,k){
+  const ps=[...document.querySelectorAll('.cr[data-g="'+g+'"]')].filter(r=>r.querySelector("[data-k=sel]").checked).map(r=>r.dataset.r);
+  if(!ps.length){$("#cmpmsg").textContent="Tick some files first.";return}
+  const v={take:"Replace / copy in "+ps.length+" file(s) with the other side's version",join:"Join both sides' lines in "+ps.length+" file(s)",del:"Delete "+ps.length+" file(s) from this repo"}[k];
+  if(confirm(v+"? Originals are backed up first."))cmpApply(ps.map(rel=>({rel,mode:k=="del"?"delete":k})))}
+$("#view").addEventListener("click",e=>{
+  const t=e.target.closest(".cmp [data-k]");if(!t||!cmp)return;
+  const k=t.dataset.k,row=t.closest(".cr"),grp=t.closest(".cg");
+  if(k=="sel")return;
+  if(k=="all"){document.querySelectorAll('.cr[data-g="'+grp.dataset.g+'"] [data-k=sel]').forEach(c=>c.checked=t.checked);return}
+  if(grp){bulk(grp.dataset.g,k);return}
+  const g=row.dataset.g,p=row.dataset.r;
+  if(k=="skip"){cmpSkip.add(g+":"+p);row.remove()}
+  else if(k=="review")review(p);
+  else if(k=="view")openFile(p,"",0);
+  else if(k=="take")cmpApply([{rel:p,mode:"take"}]);
+  else if(k=="del"){if(confirm("Delete "+p+" from this repo? A backup is kept."))cmpApply([{rel:p,mode:"delete"}])}});
+
+// line-by-line review & merge
+const nl=s=>s&&!s.endsWith("\n")?s+"\n":s;
+function merged(){
+  return rv.ops.map((o,i)=>{const[t,i1,i2,j1,j2]=o,A=rv.a.slice(i1,i2).join(""),B=rv.b.slice(j1,j2).join(""),c=t=="equal"?"a":rv.ch[i];
+    return c=="a"?A:c=="b"?B:nl(A)+B}).reduce((s,x)=>s&&x&&!s.endsWith("\n")?s+"\n"+x:s+x,"")}
+function rvUpdate(){$("#cms").disabled=!rv||merged()===rv.a.join("")}
+function rvSet(i,c){rv.ch[i]=c;const hk=$('#cmbody .hk[data-i="'+i+'"]');hk.dataset.ch=c;hk.querySelectorAll("[data-c]").forEach(b=>b.classList.toggle("on",b.dataset.c==c))}
+const ltxt=t=>esc(t.replace(/\r?\n$/,""));
+const lns=(ls,s)=>ls.length?ls.map((t,k)=>"<div><i>"+(s+k+1)+"</i>"+ltxt(t)+"</div>").join(""):'<div class="dim">(no lines)</div>';
+function ctx(i1,ls,first,end){let o="",p=-1;const n=ls.length,gap=c=>c>0?'<div class="cx">⋯ '+c+" unchanged line"+(c>1?"s":"")+"</div>":"";
+  for(let q=0;q<n;q++)if((q<3&&!first)||(q>=n-3&&!end)){o+=gap(q-p-1)+'<div class="cx"><i>'+(i1+q+1)+"</i>"+ltxt(ls[q])+"</div>";p=q}
+  return o+gap(n-1-p)}
+async function review(rel){
+  const body=$("#cmbody");rv=null;$("#cmn").textContent=rel;$("#cmm").textContent="";$("#cms").disabled=true;
+  body.innerHTML='<div class="msg">Loading…</div>';$("#cm").hidden=false;
+  let j;try{j=await post("/api/compare_file",{path,other:cmpIn.other,rel})}catch(e){body.innerHTML='<div class="msg">✗ '+esc(e.message)+"</div>";return}
+  if(j.kind!="text"){body.innerHTML='<div class="msg">This file is binary, not UTF-8 text, or too big for a line view.<br>Use <b>Take other</b> or <b>Keep mine</b> from the list.</div>';return}
+  const n=j.ops.filter(o=>o[0]!="equal").length;
+  if(!n){body.innerHTML='<div class="msg">Only line endings differ.<br>Use <b>Take other</b> from the list if you want the other version.</div>';return}
+  rv={rel,a:j.a,b:j.b,ops:j.ops,base:j.base,ch:j.ops.map(()=>"a")};
+  $("#cmm").textContent=n+" change"+(n>1?"s":"")+" · pick a side for each, then Save merge";
+  let k=0,h="";const last=j.ops.length-1;
+  j.ops.forEach((o,i)=>{const[t,i1,i2,j1,j2]=o;
+    if(t=="equal"){h+=ctx(i1,j.a.slice(i1,i2),i==0,i==last);return}
+    k++;h+='<div class="hk" data-i="'+i+'" data-ch="a"><div class="hh"><b>Change '+k+" / "+n+"</b><small>repo "+(i2>i1?"L"+(i1+1)+"-"+i2:"—")+" · other "+(j2>j1?"L"+(j1+1)+"-"+j2:"—")+'</small><span class="sp"></span>'
+      +'<button data-c="a" class="on">Keep repo</button><button data-c="b">Take other</button><button data-c="ab">Both</button></div>'
+      +'<div class="sd ra" data-l="repo (this folder)">'+lns(j.a.slice(i1,i2),i1)+'</div><div class="sd rb" data-l="other">'+lns(j.b.slice(j1,j2),j1)+"</div></div>"});
+  body.innerHTML=h;body.scrollTop=0}
+$("#cmbody").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b||!rv)return;rvSet(+b.closest(".hk").dataset.i,b.dataset.c);rvUpdate()});
+document.querySelectorAll("#cm [data-v]").forEach(b=>b.onclick=()=>{if(!rv)return;rv.ops.forEach((o,i)=>{if(o[0]!="equal")rvSet(i,b.dataset.v)});rvUpdate()});
+$("#cms").onclick=async()=>{if(!rv)return;const r=rv,content=merged();$("#cm").hidden=true;await cmpApply([{rel:r.rel,mode:"merge",content,base:r.base}])};
+$("#cmx").onclick=()=>$("#cm").hidden=true;
+$("#cm").addEventListener("mousedown",e=>{if(e.target.id=="cm")$("#cm").hidden=true});
+
 // palette, zen, weave
 const zen=()=>document.body.classList.toggle("zen");
 const click=a=>()=>$("[data-a="+a+"]").click(),tabTo=t=>()=>setTab(t);
 const ACTS=[{n:"Commit",k:"KeyC",f:click("commit")},{n:"Push",k:"KeyP",f:click("push")},{n:"Pull",k:"KeyL",f:click("pull")},{n:"Fetch",k:"KeyF",f:click("fetch")},
   {n:"Add all",k:"KeyA",f:click("add_all")},{n:"Stash",k:"KeyS",f:click("stash")},{n:"Show diff",k:"KeyD",f:tabTo("diff")},{n:"Show graph",k:"KeyG",f:tabTo("graph")},
-  {n:"Show tree",k:"KeyT",f:tabTo("tree")},{n:"Show reflog",k:"KeyR",f:tabTo("reflog")},{n:"Toggle Zen Loom",k:"KeyZ",f:zen},{n:"Toggle light / dark",k:"KeyM",f:()=>$("#mode").click()},{n:"Help",k:"KeyH",f:()=>hp(true)}];
+  {n:"Show tree",k:"KeyT",f:tabTo("tree")},{n:"Show reflog",k:"KeyR",f:tabTo("reflog")},{n:"Show compare",k:"KeyO",f:tabTo("compare")},{n:"Toggle Zen Loom",k:"KeyZ",f:zen},{n:"Toggle light / dark",k:"KeyM",f:()=>$("#mode").click()},{n:"Help",k:"KeyH",f:()=>hp(true)}];
 let sel=0,shown=[];
 const score=(q,s)=>{q=q.toLowerCase();s=s.toLowerCase();let i=0,sc=0;for(const ch of q){const j=s.indexOf(ch,i);if(j<0)return -1;sc+=j==i?3:1;i=j+1}return sc};
 function palRender(){
@@ -452,7 +566,7 @@ function weave(){const o=document.createElement("div");o.id="weave";let s='<svg 
 let lastEsc=0;
 addEventListener("keydown",e=>{
   if(e.key=="Escape"){
-    if(!$("#fv").hidden){fvClose();return}
+    if(!$("#cm").hidden){$("#cm").hidden=true;return}if(!$("#fv").hidden){fvClose();return}
     if(!$("#pal").hidden){pal(false);return}
     if(document.body.classList.contains("zen")){zen();return}
     const n=Date.now();if(n-lastEsc<500){setTab("diff");hp(false)}lastEsc=n;
